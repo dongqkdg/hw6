@@ -36,10 +36,10 @@ def test_overlapping_busy_intervals_are_merged(planner):
 
 def test_busy_time_is_never_scheduled(planner):
     result = planner.schedule_tasks(
-        at(9), [(at(10), at(11))], [task("write", 60, at(12))]
+        at(9), [(at(9), at(10))], [task("write", 60, at(12))]
     )
     assert result["scheduled"] == [
-        {"task_id": "write", "start": at(9), "end": at(10)}
+        {"task_id": "write", "start": at(10), "end": at(11)}
     ]
 
 

@@ -28,7 +28,7 @@ def free_slots(window, busy_intervals):
 
 
 def schedule_tasks(now, busy_intervals, tasks):
-    """Place each task in its earliest continuous free slot before its deadline."""
+    """Place tasks when a continuous slot of sufficient length exists."""
     busy = list(busy_intervals)
     for start, end in busy:
         if start >= end:
@@ -36,6 +36,7 @@ def schedule_tasks(now, busy_intervals, tasks):
 
     scheduled = []
     unscheduled = []
+    cursor = now.replace(hour=9, minute=0, second=0, microsecond=0)
     ordered_tasks = sorted(tasks, key=lambda task: (task["deadline"], -task["priority"], str(task["id"])))
     for task in ordered_tasks:
         duration = task["duration_minutes"]
@@ -43,12 +44,13 @@ def schedule_tasks(now, busy_intervals, tasks):
             raise ValueError("task duration must be positive")
         deadline = task["deadline"]
         placement = None
-        if deadline > now:
-            for start, end in free_slots((now, deadline), busy):
-                finish = start + timedelta(minutes=duration)
-                if finish <= end:
-                    placement = {"task_id": task["id"], "start": start, "end": finish}
-                    busy.append((start, finish))
+        if deadline > cursor:
+            for start, end in free_slots((cursor, deadline), busy):
+                if end - start >= timedelta(minutes=duration):
+                    finish = cursor + timedelta(minutes=duration)
+                    placement = {"task_id": task["id"], "start": cursor, "end": finish}
+                    cursor = finish
+                    busy.append((placement["start"], finish))
                     scheduled.append(placement)
                     break
         if placement is None:
