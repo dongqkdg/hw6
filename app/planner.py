@@ -36,7 +36,7 @@ def schedule_tasks(now, busy_intervals, tasks):
 
     scheduled = []
     unscheduled = []
-    cursor = now.replace(hour=9, minute=0, second=0, microsecond=0)
+    cursor = now
     ordered_tasks = sorted(tasks, key=lambda task: (task["deadline"], -task["priority"], str(task["id"])))
     for task in ordered_tasks:
         duration = task["duration_minutes"]
@@ -47,8 +47,8 @@ def schedule_tasks(now, busy_intervals, tasks):
         if deadline > cursor:
             for start, end in free_slots((cursor, deadline), busy):
                 if end - start >= timedelta(minutes=duration):
-                    finish = cursor + timedelta(minutes=duration)
-                    placement = {"task_id": task["id"], "start": cursor, "end": finish}
+                    finish = start + timedelta(minutes=duration)
+                    placement = {"task_id": task["id"], "start": start, "end": finish}
                     cursor = finish
                     busy.append((placement["start"], finish))
                     scheduled.append(placement)
