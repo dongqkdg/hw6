@@ -22,7 +22,13 @@ def request(app, method, path, payload=None):
 def test_health_endpoint_is_ready_without_llm():
     status, body = request(create_app(), "GET", "/health")
     assert status == "200 OK"
-    assert body == {"status": "ok"}
+    assert body == {"status": "ok", "commit": "unknown"}
+
+
+def test_health_endpoint_reports_image_commit():
+    status, body = request(create_app(commit_sha="old-commit"), "GET", "/health")
+    assert status == "200 OK"
+    assert body == {"status": "ok", "commit": "old-commit"}
 
 
 def test_plan_endpoint_returns_schedule_with_explicit_now():
