@@ -157,6 +157,19 @@ def test_busy_interval_can_cross_midnight_without_being_discarded():
     assert result["scheduled"][0]["start"] == datetime(2026, 11, 24, 1, tzinfo=KST)
 
 
+def test_zero_length_busy_interval_is_rejected():
+    result = build_week_plan(
+        NOW,
+        "월 09:00-09:00",
+        "매일 06:00-07:00",
+        TASKS,
+        None,
+    )
+
+    assert result["rejected_count"] == 1
+    assert result["scheduled"][0]["start"] == NOW
+
+
 def test_rule_fallback_reports_unparseable_input(monkeypatch):
     monkeypatch.delenv("FACTCHAT_API_KEY", raising=False)
     result = build_week_plan(NOW, "???", SLEEP, "??", None)
