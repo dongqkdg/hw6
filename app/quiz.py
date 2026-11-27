@@ -11,7 +11,7 @@ def _datetime(value, week_start, week_end):
         raise ValueError("datetime must include timezone")
     if not week_start <= parsed < week_end:
         raise ValueError("datetime outside this week")
-    return parsed
+    return parsed.astimezone(week_start.tzinfo)
 
 
 def _sleep_time(value):
