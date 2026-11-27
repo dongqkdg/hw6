@@ -42,4 +42,4 @@ jobs:
           FACTCHAT_API_KEY: ${{ secrets.FACTCHAT_API_KEY }}
           FACTCHAT_BASE_URL: ${{ vars.FACTCHAT_BASE_URL }}
           FACTCHAT_MODEL: ${{ vars.FACTCHAT_MODEL }}
-        run: bash scripts/deploy_local.sh factchat-planner:${{ github.sha }}
+        run: bash scripts/deploy_local.sh factchat-planner:${{ github.sha }} ${{ github.sha }}
