@@ -39,6 +39,7 @@ def test_non_json_response_is_retried_exactly_once(monkeypatch):
     result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
     assert len(calls) == 2
     assert result["source"] == "llm"
+    assert result["metrics"] == {"llm_calls": 2, "llm_failures": 1, "discarded_items": 0, "fallbacks": 0}
     assert result["scheduled"][0]["start"] == NOW.replace(hour=10)
 
 
@@ -54,6 +55,7 @@ def test_non_json_twice_uses_rule_based_fallback(monkeypatch):
     result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
     assert len(calls) == 2
     assert result["source"] == "rules"
+    assert result["metrics"] == {"llm_calls": 2, "llm_failures": 2, "discarded_items": 0, "fallbacks": 1}
     assert result["scheduled"][0]["start"] == NOW.replace(hour=10)
 
 
@@ -70,7 +72,20 @@ def test_invalid_llm_items_are_discarded_and_counted(monkeypatch):
     result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
     assert result["source"] == "llm"
     assert result["rejected_count"] == 2
+    assert result["metrics"] == {"llm_calls": 1, "llm_failures": 0, "discarded_items": 2, "fallbacks": 0}
     assert [item["task_id"] for item in result["scheduled"]] == ["보고서"]
+
+
+def test_invalid_top_level_schema_counts_failure_and_fallback(monkeypatch):
+    monkeypatch.setenv("FACTCHAT_API_KEY", "fake-test-key")
+
+    def fake_post(url, *, headers, json, timeout):
+        return reply('{"busy": "wrong", "tasks": []}')
+
+    client = LLMClient(fake_post, base_url="https://example.invalid/v1", model="test-model")
+    result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
+    assert result["source"] == "rules"
+    assert result["metrics"] == {"llm_calls": 1, "llm_failures": 1, "discarded_items": 0, "fallbacks": 1}
 
 
 def test_missing_key_uses_rules_without_calling_post(monkeypatch):
@@ -82,6 +97,7 @@ def test_missing_key_uses_rules_without_calling_post(monkeypatch):
     client = LLMClient(forbidden_post, base_url="https://example.invalid/v1", model="test-model")
     result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
     assert result["source"] == "rules"
+    assert result["metrics"] == {"llm_calls": 0, "llm_failures": 0, "discarded_items": 0, "fallbacks": 1}
     assert result["scheduled"][0]["start"] == NOW.replace(hour=10)
 
 
@@ -94,6 +110,7 @@ def test_call_failure_uses_rules(monkeypatch):
     client = LLMClient(failed_post, base_url="https://example.invalid/v1", model="test-model")
     result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
     assert result["source"] == "rules"
+    assert result["metrics"] == {"llm_calls": 1, "llm_failures": 1, "discarded_items": 0, "fallbacks": 1}
     assert result["scheduled"][0]["start"] == NOW.replace(hour=10)
 
 
@@ -115,3 +132,4 @@ def test_rule_fallback_reports_unparseable_input(monkeypatch):
     assert result["source"] == "rules"
     assert result["rejected_count"] == 2
     assert result["scheduled"] == []
+    assert result["metrics"] == {"llm_calls": 0, "llm_failures": 0, "discarded_items": 2, "fallbacks": 1}

@@ -16,3 +16,5 @@ def test_cli_collects_input_and_prints_weekly_plan():
     assert "보고서" in printed
     assert "2026-11-23 10:00" in printed
     assert "미배치" in printed
+    assert "LLM 호출 0회" in printed
+    assert "대체 동작 1회" in printed
