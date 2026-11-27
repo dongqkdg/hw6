@@ -28,10 +28,10 @@ ChatKHU API 키는 실행 환경의 `FACTCHAT_API_KEY`에 설정합니다. `--ba
 
 ## 로컬 컨테이너와 GitHub Actions
 
-컨테이너는 8080번 포트에서 `GET /health`와 `POST /plan`을 제공합니다. `/plan`에는 현재 시각을 시간대가 포함된 ISO 형식으로 전달합니다.
+컨테이너는 8080번 포트에서 `GET /health`와 `POST /plan`을 제공합니다. `/health`는 상태와 이미지에 넣은 커밋 해시를 반환합니다. `/plan`에는 현재 시각을 시간대가 포함된 ISO 형식으로 전달합니다.
 
 ```bash
-docker build -t factchat-planner:local .
+docker build --build-arg APP_COMMIT_SHA=$(git rev-parse HEAD) -t factchat-planner:local .
 docker run -d --name factchat-planner -p 127.0.0.1:8080:8080 \
   --env FACTCHAT_API_KEY --env FACTCHAT_BASE_URL --env FACTCHAT_MODEL \
   factchat-planner:local

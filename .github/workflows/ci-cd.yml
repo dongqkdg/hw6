@@ -29,7 +29,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --tag factchat-planner:${{ github.sha }} .
+      - run: docker build --build-arg APP_COMMIT_SHA=${{ github.sha }} --tag factchat-planner:${{ github.sha }} .
 
   deploy:
     needs: [test, build]

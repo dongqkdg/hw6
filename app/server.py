@@ -11,7 +11,7 @@ def main():
     base_url = os.environ.get("FACTCHAT_BASE_URL")
     model = os.environ.get("FACTCHAT_MODEL")
     client = LLMClient(http_post, base_url=base_url, model=model) if base_url and model else None
-    with make_server("0.0.0.0", 8080, create_app(client)) as server:
+    with make_server("0.0.0.0", 8080, create_app(client, commit_sha=os.environ.get("APP_COMMIT_SHA", "unknown"))) as server:
         server.serve_forever()
 
 

@@ -12,12 +12,12 @@ def _response(start_response, status, data):
     return [body]
 
 
-def create_app(client=None):
+def create_app(client=None, *, commit_sha="unknown"):
     def application(environ, start_response):
         method = environ.get("REQUEST_METHOD")
         path = environ.get("PATH_INFO")
         if method == "GET" and path == "/health":
-            return _response(start_response, "200 OK", {"status": "ok"})
+            return _response(start_response, "200 OK", {"status": "ok", "commit": commit_sha})
         if method != "POST" or path != "/plan":
             return _response(start_response, "404 Not Found", {"error": "not_found"})
         try:
