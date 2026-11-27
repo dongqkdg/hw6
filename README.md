@@ -49,4 +49,4 @@ curl --fail http://127.0.0.1:8080/health
 }
 ```
 
-GitHub 저장소의 **Settings → Actions → Runners**에서 이 컴퓨터를 self-hosted runner로 등록하고, Docker 엔진을 실행한 상태로 둡니다. 저장소 Secret `FACTCHAT_API_KEY`와 Variables `FACTCHAT_BASE_URL`, `FACTCHAT_MODEL`을 설정합니다. `main`에 push하면 `test → build → deploy` 순서로 실행됩니다. pull request에서는 `test`만 실행됩니다. 배포는 로컬 Docker 컨테이너를 교체하고 `/health`를 확인하며, 새 컨테이너가 정상 응답하지 않으면 직전 이미지로 되돌립니다. 처음 배포할 때는 되돌릴 이미지가 없으므로 실패 상태로 종료합니다.
+GitHub 저장소의 **Settings → Actions → Runners**에서 이 컴퓨터를 self-hosted runner로 등록하고, Docker 엔진을 실행한 상태로 둡니다. 테스트는 GitHub 호스팅 러너에서 실행하고, 이미지 빌드와 배포는 이 로컬 러너에서 실행합니다. 저장소 Secret `FACTCHAT_API_KEY`와 Variables `FACTCHAT_BASE_URL`, `FACTCHAT_MODEL`을 설정합니다. `main`에 push하면 `test → build → deploy` 순서로 실행됩니다. pull request에서는 `test`만 실행됩니다. 배포는 로컬 Docker 컨테이너를 교체하고 `/health`를 확인하며, 새 컨테이너가 정상 응답하지 않으면 직전 이미지로 되돌립니다. 처음 배포할 때는 되돌릴 이미지가 없으므로 실패 상태로 종료합니다.
