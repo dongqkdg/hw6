@@ -88,6 +88,24 @@ def test_invalid_top_level_schema_counts_failure_and_fallback(monkeypatch):
     assert result["metrics"] == {"llm_calls": 1, "llm_failures": 1, "discarded_items": 0, "fallbacks": 1}
 
 
+def test_llm_utc_times_are_displayed_in_planner_timezone(monkeypatch):
+    monkeypatch.setenv("FACTCHAT_API_KEY", "fake-test-key")
+    payload = {
+        "busy": [{"start": "2026-11-23T00:00:00+00:00", "end": "2026-11-23T01:00:00+00:00"}],
+        "sleep": {"start": "23:00", "end": "07:00"},
+        "tasks": [{"id": "보고서", "duration_minutes": 60, "deadline": "2026-11-23T03:00:00+00:00", "priority": 2}],
+    }
+
+    def fake_post(url, *, headers, json, timeout):
+        return reply(__import__("json").dumps(payload))
+
+    client = LLMClient(fake_post, base_url="https://example.invalid/v1", model="test-model")
+    result = build_week_plan(NOW, BUSY, SLEEP, TASKS, client)
+    assert result["source"] == "llm"
+    assert result["scheduled"][0]["start"] == NOW.replace(hour=10)
+    assert result["scheduled"][0]["start"].tzinfo == KST
+
+
 def test_missing_key_uses_rules_without_calling_post(monkeypatch):
     monkeypatch.delenv("FACTCHAT_API_KEY", raising=False)
 

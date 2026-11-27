@@ -78,6 +78,18 @@ def test_scheduled_tasks_do_not_overlap(planner):
     assert first["end"] <= second["start"]
 
 
+def test_shorter_task_can_fill_gap_before_higher_priority_task(planner):
+    result = planner.schedule_tasks(
+        at(9),
+        [(at(9, 30), at(10))],
+        [task("long", 60, at(11), 2), task("short", 30, at(11), 1)],
+    )
+    by_id = {item["task_id"]: item for item in result["scheduled"]}
+    assert by_id["long"]["start"] == at(10)
+    assert by_id["short"]["start"] == at(9)
+    assert result["unscheduled"] == []
+
+
 def test_earlier_deadline_is_scheduled_first(planner):
     result = planner.schedule_tasks(
         at(9), [], [task("later", 60, at(12)), task("sooner", 60, at(11))]
