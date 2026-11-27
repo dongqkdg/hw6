@@ -1,0 +1,45 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-planner-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest -q
+
+  build:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag factchat-planner:${{ github.sha }} .
+
+  deploy:
+    needs: [test, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy, check /health, and roll back on failure
+        env:
+          FACTCHAT_API_KEY: ${{ secrets.FACTCHAT_API_KEY }}
+          FACTCHAT_BASE_URL: ${{ vars.FACTCHAT_BASE_URL }}
+          FACTCHAT_MODEL: ${{ vars.FACTCHAT_MODEL }}
+        run: bash scripts/deploy_local.sh factchat-planner:${{ github.sha }}
