@@ -22,4 +22,9 @@ def run_cli(now, client, *, input_fn=input, output_fn=print):
     for item in result["unscheduled"]:
         output_fn(f"- {item['task_id']}: 배치 가능한 연속 시간이 없습니다")
     output_fn(f"무시한 입력: {result['rejected_count']}개")
+    metrics = result["metrics"]
+    output_fn(
+        f"LLM 호출 {metrics['llm_calls']}회 | 실패 {metrics['llm_failures']}회 | "
+        f"버린 항목 {metrics['discarded_items']}개 | 대체 동작 {metrics['fallbacks']}회"
+    )
     return result

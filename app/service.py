@@ -94,16 +94,27 @@ def build_week_plan(now, busy_text, sleep_text, tasks_text, client=None):
     week_end = week_start + timedelta(days=7)
     source = "rules"
     data = None
+    validation_failure = 0
     if client is not None:
         try:
             raw = client.extract(busy_text, sleep_text, tasks_text, week_start, week_end)
-            data = validate_payload(raw, week_start, week_end)
-            source = "llm"
         except Exception:
             # External calls and untrusted responses must not stop local planning.
             pass
+        else:
+            try:
+                data = validate_payload(raw, week_start, week_end)
+                source = "llm"
+            except Exception:
+                validation_failure = 1
     if data is None:
         data = _rule_input(busy_text, sleep_text, tasks_text, week_start)
     busy = data["busy"] + _sleep_intervals(week_start, week_end, data["sleep"])
     result = schedule_tasks(now, busy, data["tasks"])
-    return {**result, "source": source, "rejected_count": data["rejected_count"], "week_start": week_start, "week_end": week_end}
+    metrics = {
+        "llm_calls": getattr(client, "calls", 0),
+        "llm_failures": getattr(client, "failures", 0) + validation_failure,
+        "discarded_items": data["rejected_count"],
+        "fallbacks": int(source == "rules"),
+    }
+    return {**result, "source": source, "rejected_count": data["rejected_count"], "metrics": metrics, "week_start": week_start, "week_end": week_end}

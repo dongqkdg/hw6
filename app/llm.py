@@ -25,8 +25,12 @@ class LLMClient:
         self.post = post
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.calls = 0
+        self.failures = 0
 
     def extract(self, busy_text, sleep_text, tasks_text, week_start, week_end):
+        self.calls = 0
+        self.failures = 0
         key = os.environ.get("FACTCHAT_API_KEY")
         if not key:
             raise MissingAPIKey()
@@ -40,15 +44,21 @@ class LLMClient:
             f"Busy: {busy_text}\nSleep: {sleep_text}\nTasks: {tasks_text}"
         )
         for attempt in range(2):
-            response = self.post(
-                f"{self.base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-                json={"model": self.model, "messages": [{"role": "user", "content": prompt}], "temperature": 0},
-                timeout=15,
-            )
-            content = response["choices"][0]["message"]["content"]
+            self.calls += 1
+            try:
+                response = self.post(
+                    f"{self.base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json={"model": self.model, "messages": [{"role": "user", "content": prompt}], "temperature": 0},
+                    timeout=15,
+                )
+                content = response["choices"][0]["message"]["content"]
+            except Exception:
+                self.failures += 1
+                raise
             try:
                 return json_module.loads(content)
             except (TypeError, json_module.JSONDecodeError):
+                self.failures += 1
                 if attempt == 1:
                     raise ValueError("LLM returned non-JSON twice") from None
