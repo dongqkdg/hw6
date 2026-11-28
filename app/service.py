@@ -35,8 +35,10 @@ def _rule_input(busy_text, sleep_text, tasks_text, week_start):
             day, start_text, end_text = match.groups()
             start = _day_time(week_start, day, start_text)
             end = _day_time(week_start, day, end_text)
-            if start >= end:
+            if end == start:
                 raise ValueError("invalid busy interval")
+            if end < start:
+                end += timedelta(days=1)
             busy.append((start, end))
         except ValueError:
             rejected += 1
